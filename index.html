@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f2f1e9" />
+    <meta
+      name="description"
+      content="A quiet little studio for exploring what a machine sees in your images."
+    />
+    <title>Fieldwork — Image classifier</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="preconnect" href="https://storage.googleapis.com" />
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Fieldwork home">
+          <span class="brand-mark" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </span>
+          <span>fieldwork<span class="brand-period">.</span></span>
+        </a>
+        <div class="topbar-note">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span>AN IMAGE STUDY</span>
+          <span class="topbar-divider" aria-hidden="true"></span>
+          <span>NO. 001</span>
+        </div>
+        <a class="about-link" href="#about">About the model <span aria-hidden="true">↗</span></a>
+      </header>
+
+      <main>
+        <section class="intro" aria-labelledby="page-title">
+          <div class="intro-copy">
+            <p class="eyebrow"><span class="eyebrow-line"></span> A small experiment in seeing</p>
+            <h1 id="page-title">What do you<br /><em>see</em> in this?</h1>
+            <p class="intro-description">
+              Drop in a picture. We’ll ask a tiny neural network what it thinks is there.
+              No uploads, no black box—just a curious second opinion.
+            </p>
+          </div>
+          <div class="intro-aside" aria-label="Classifier information">
+            <span class="aside-index">01 / 03</span>
+            <span class="aside-rule"></span>
+            <span class="aside-copy">LOOK<br />CLOSER</span>
+            <span class="aside-spark" aria-hidden="true">✳</span>
+          </div>
+        </section>
+
+        <section class="workbench" aria-label="Image classification workspace">
+          <div class="image-column">
+            <div class="section-heading">
+              <span class="step-number">01</span>
+              <h2>Your image</h2>
+              <span class="section-hint">JPG, PNG, WEBP, GIF · MAX 20 MB</span>
+            </div>
+
+            <div class="image-card" id="drop-zone">
+              <input
+                class="visually-hidden"
+                id="image-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                aria-label="Choose an image to classify"
+              />
+              <div class="empty-state" id="empty-state">
+                <div class="upload-illustration" aria-hidden="true">
+                  <span class="illustration-sun"></span>
+                  <span class="illustration-hill hill-back"></span>
+                  <span class="illustration-hill hill-front"></span>
+                  <span class="illustration-frame"></span>
+                  <span class="illustration-plus">+</span>
+                </div>
+                <p class="empty-title">A picture, any picture.</p>
+                <p class="empty-copy">Drop it here, or browse your files</p>
+                <button class="button button-dark" id="browse-button" type="button">
+                  <span>Choose an image</span><span aria-hidden="true">↗</span>
+                </button>
+                <p class="privacy-note"><span aria-hidden="true">⌑</span> Your image stays on this device</p>
+              </div>
+              <div class="preview-state" id="preview-state" hidden>
+                <img id="preview-image" alt="Selected image for classification" />
+                <div class="preview-overlay">
+                  <span class="preview-file" id="file-name"></span>
+                  <button class="icon-button" id="change-image-button" type="button" aria-label="Choose a different image" title="Choose a different image">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p class="image-caption">
+              <span class="caption-marker" aria-hidden="true"></span>
+              <span id="image-caption-text">A good subject is clear, centered, and well lit.</span>
+            </p>
+          </div>
+
+          <div class="results-column">
+            <div class="section-heading">
+              <span class="step-number">02</span>
+              <h2>First impressions</h2>
+              <span class="section-hint">TOP GUESSES</span>
+            </div>
+
+            <div class="results-card" aria-live="polite" aria-busy="false" id="results-card">
+              <div class="results-empty" id="results-empty">
+                <div class="orbit-art" aria-hidden="true">
+                  <span class="orbit orbit-one"></span>
+                  <span class="orbit orbit-two"></span>
+                  <span class="orbit-core">?</span>
+                  <span class="orbit-star star-one">✳</span>
+                  <span class="orbit-star star-two">·</span>
+                </div>
+                <p class="results-empty-title">The answer is in the image.</p>
+                <p class="results-empty-copy">Add a picture to see what the model notices first.</p>
+              </div>
+              <div class="results-loading" id="results-loading" hidden>
+                <div class="loader" aria-hidden="true"></div>
+                <p class="loading-title" id="loading-title">Waking up the model</p>
+                <p class="loading-copy" id="loading-copy">A moment while it gets its bearings…</p>
+              </div>
+              <div class="results-error" id="results-error" hidden role="alert">
+                <span class="error-mark" aria-hidden="true">!</span>
+                <p class="error-title" id="error-title">We couldn’t make sense of that.</p>
+                <p class="error-copy" id="error-copy">Try another image, or check your connection and try again.</p>
+                <button class="text-button" id="retry-button" type="button">
+                  <span id="retry-label">Choose another image</span> <span aria-hidden="true">↗</span>
+                </button>
+              </div>
+              <div class="results-content" id="results-content" hidden>
+                <div class="best-guess">
+                  <span class="best-guess-label"><span class="best-guess-dot"></span> MOST LIKELY</span>
+                  <div class="best-guess-row">
+                    <h3 id="top-label">—</h3>
+                    <span class="top-confidence" id="top-confidence">—</span>
+                  </div>
+                  <div class="confidence-track"><span id="top-bar"></span></div>
+                </div>
+                <div class="other-guesses">
+                  <div class="guesses-heading">
+                    <span>ALSO IN THE FRAME</span>
+                    <span>CONFIDENCE</span>
+                  </div>
+                  <ol class="prediction-list" id="prediction-list"></ol>
+                </div>
+                <p class="results-footnote"><span aria-hidden="true">✳</span> These are educated guesses, not facts.</p>
+              </div>
+            </div>
+            <div class="model-status" id="model-status" role="status">
+              <span class="status-indicator" id="status-indicator"></span>
+              <span id="model-status-text">Model loads when you choose an image</span>
+              <span class="model-version">MobileNet · v2</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="bottom-notes" id="about" aria-label="About this experiment">
+          <div class="note-card note-about">
+            <span class="note-number">A</span>
+            <div>
+              <h2>A second opinion, not the last word.</h2>
+              <p>ImageNet-trained MobileNet can recognize 1,000 everyday categories. It’s quick, but context and nuance are still yours.</p>
+            </div>
+          </div>
+          <div class="note-card note-privacy">
+            <span class="note-number">B</span>
+            <div>
+              <h2>Private by design.</h2>
+              <p>Classification happens in your browser. The model is downloaded from a public CDN; your image is never sent to a server.</p>
+            </div>
+          </div>
+          <div class="footer-mark" aria-hidden="true">FW<span>·</span></div>
+        </section>
+      </main>
+      <footer class="footer">
+        <span>MADE FOR THE ART OF LOOKING</span>
+        <span>FIELDWORK STUDIO <span class="footer-year">© 2026</span></span>
+      </footer>
+    </div>
+  </body>
+</html>
